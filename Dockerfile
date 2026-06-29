@@ -34,12 +34,23 @@ COPY gradle gradle
 COPY gradle.properties gradle.properties
 COPY build.gradle build.gradle
 
+COPY gradle/wrapper gradle/wrapper
+
 # copy service sources
 COPY Sazzler-Service-Registry/ Sazzler-Service-Registry/
-WORKDIR /home/gradle/project/Sazzler-Service-Registry
+# copy dependent local projects so project(':util') and project(':api-definition') are available
+COPY util/ util/
+COPY api-definition/ api-definition/
+# copy wrapper scripts from repo root so ./gradlew is available
+COPY gradlew gradlew
+COPY gradlew.bat gradlew.bat
+WORKDIR /home/gradle/project
 
 # build (skip tests to speed up CI)
-RUN gradle clean build --no-daemon -x test
+# ensure wrapper is executable and build only the module from the repo root
+RUN chmod +x ./gradlew
+# Use the image's Gradle to avoid wrapper download inside the container
+RUN gradle :Sazzler-Service-Registry:clean :Sazzler-Service-Registry:build --no-daemon -x test
 
 ################################################################################
 # Create a final stage for running your application.
